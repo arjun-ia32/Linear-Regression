@@ -153,10 +153,10 @@ function linear_regression_apply(X, Y) {
 */
 
 function create_data_table(X, Y, YY) {
-    let D = Y.map((y, i) => y - YY[i]);
+    let E = Y.map((y, i) => y - YY[i]);
     return {
-        headers: { "x" : "\\(x\\)", "y": "\\(y\\)", "yy": "\\(\\hat{y}\\)", "d": "\\(y - \\hat{y}\\)" },
-        values: X.map((x, i) => ({ "x":  x, "y": Y[i], "yy": YY[i], d: D[i] }))
+        headers: { "x" : "\\(x\\)", "y": "\\(y\\)", "yy": "\\(\\hat{y}\\)", "e": "\\(y - \\hat{y}\\)" },
+        values: X.map((x, i) => ({ "x":  x, "y": Y[i], "yy": YY[i], "e": E[i] }))
     }
 }
 
@@ -238,6 +238,20 @@ function create_scatter_chart_data(data_table) {
     };
 }
 
+function create_residual_plot_data(data_table) {
+    let dataset1 = data_table.map(x => ({x: x.x, y: x.e}));
+    let colour1 = "rgba(0, 0, 255, 0.65)";
+    return {
+        datasets: [{
+            label: 'Residual / Error',
+            borderColor: colour1,
+            backgroundColor: colour1, //Chart.helpers.color(colour).alpha(0.2).rgbString(),
+            pointStyle: 'rect',
+            data: dataset1
+        }]
+    };
+}
+
 function create_scatter_chart(data_table, canvas_id) {
     let chart_data_table = data_table.values;
     window.chart_data = create_scatter_chart_data(chart_data_table);
@@ -251,24 +265,26 @@ function create_scatter_chart(data_table, canvas_id) {
                 text: "Scatter Chart"
             },
             scatter_join_points: true,
-            annotation: {
-                annotations: [{
-                    drawTime: "afterDatasetsDraw",
-                    id: "cline",
-                    type: "line",
-                    xScaleID: "x-axis-1",
-                    yScaleID: "y-axis-1",
-                    xMin: 1,
-                    xMax: 1,
-                    yMin: 9,
-                    yMax: 9,
-                    borderColor: "black",
-                    borderWidth: 1
-                }]
+        }
+    });
+}
+
+function create_residual_plot(data_table, canvas_id) {
+    let chart_data_table = data_table.values;
+    window.residual_plot_data = create_residual_plot_data(chart_data_table);
+
+    let ctx = document.getElementById(canvas_id).getContext("2d");
+    window.residual_plot = Chart.Scatter(ctx, {
+        data: window.residual_plot_data,
+        options: {
+            title: {
+                display: true,
+                text: "Residual Plot"
             }
         }
     });
 }
+
 
 /*
     Some functions for HTML tables
@@ -304,7 +320,7 @@ function create_html_table(table_data, table_id, table_on_change_callback) {
     th.classList.add("px-1");
     th.style.textAlign = "center";
     th.style.verticalAlign = "center";
-    th.innerText = "+-";
+    th.innerHTML = "+-";
     tr.appendChild(th);
 
     thead.appendChild(tr);
@@ -408,18 +424,20 @@ function table_update_values(table) {
     table.internal_data = create_data_table(X, Y, YY);
 
     let r = ppmcc(X, Y);
-    document.getElementById("r").innerText = r;
-    document.getElementById("d").innerText = table.internal_data.values.sum(x => x.d).toFixed(4);
+    document.getElementById("r").innerText = r.toFixed(4);
+    document.getElementById("d").innerText = table.internal_data.values.sum(x => x.e).toFixed(4);
 
     for (let i = 1; i < table.rows.length; ++i) {
         //console.log(i + " and YY is " + YY[i - 1]);
         table.rows[i].cells.item(2).innerText = YY[i - 1].toFixed(4);
-        table.rows[i].cells.item(3).innerText = table.internal_data.values[i - 1].d.toFixed(4);
+        table.rows[i].cells.item(3).innerText = table.internal_data.values[i - 1].e.toFixed(4);
     }
 
     window.chart_data.datasets[0].data = table.internal_data.values.map(x => ({x: x.x, y: x.y}));
     window.chart_data.datasets[1].data = table.internal_data.values.map((x, i) => ({x: x.x, y: x.yy}));
+    window.residual_plot_data.datasets[0].data = table.internal_data.values.map((x, i) => ({x: x.x, y: x.e}));
     window.scatter_chart.update();
+    window.residual_plot.update();
 }
 
 function table_handle_remove_row(table, tr) {
