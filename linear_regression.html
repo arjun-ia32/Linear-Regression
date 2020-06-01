@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="UTF-8" />
+
+        <!-- Include Styles -->
+        <link rel="stylesheet" href="../../Library/css/bootstrap.min.css" />
+
+        <!-- Include Scripts -->
+        <script src="../../Library/js/jquery.min.js"></script>
+        <script src="../../Library/js/popper.min.js"></script>
+        <script src="../../Library/js/bootstrap.bundle.min.js"></script>
+        <script src="../../Library/js/chart.min.js"></script>
+        <script src="../../Library/js/papaparse.min.js"></script>
+        <script src="../../Library/js/MathJax/es5/tex-chtml.js" id="MathJax-script" async></script>
+        <script src="./js/custom.js"></script>
+
+        <style>
+            .flex-container {
+                display: flex;
+                flex-flow: row wrap;
+                justify-content: flex-start;
+                align-items: center;
+            }
+        </style>
+
+        <script>
+            window.onload = process_on_load;
+
+            function handle_html_table_change(table, td) {
+                return function() {
+                    //console.log("Change <" + td.innerText + ">");
+                    if (td.innerText === "\n") {
+                        return;
+                    }
+                    table.internal_data.values[td.parentElement.rowIndex - 1][td.internal_j] = parseFloat(td.innerText);
+                    table_update_values(table);
+                }
+            }
+
+            function process_on_load() {
+                let x = [1, 2, 3, 4, 5];
+                let y = [9, 8, 7, 6, 5];
+
+                // test_ppmcc_speed(x, y);
+
+                let sx = stddev_p(x);
+                let sy = stddev_p(y);
+                let c = covariance_p(x, y);
+                let r = ppmcc(x, y);
+
+                let t = Math.sqrt(Math.pow(200, 2) + 4 * 1 * 0.000015);
+                console.log("Test is " + t);
+                console.log("Mean of x is " + mean(x));
+                console.log("Mean of y is " + mean(y));
+                console.log("Standard deviation of x is " + sx);
+                console.log("Standard deviation of y is " + sy);
+                console.log("Covariance is " + c);
+                console.log("Correlation coefficient is " + r);
+                console.log("Try 2 is " + (c / (sx * sy)));
+
+                let yy = linear_regression_apply(x, y);
+                let data_table = create_data_table(x, y, yy);
+                let html_table = create_html_table(data_table, "table-main", handle_html_table_change);
+                document.getElementById("display-html-table").appendChild(html_table);
+                create_scatter_chart(data_table, "canvas-chart");
+                document.getElementById("r").innerText = r;
+                document.getElementById("d").innerText = sum(y, yy, (xi, yi) => xi - yi).toFixed(4);
+                console.log(window.chart_data);
+                console.log(window.scatter_chart);
+                MathJax.typeset();
+            }
+        </script>
+
+        <title>Page Title</title>
+    </head>
+    <body>
+        <h2>Linear Regression</h2>
+        <br />
+        <div id="display-text">
+            <span>Correlation coefficient is <span id="r"></span></span> <br />
+            <span>Sum of \(y - \hat{y}\) is <span id="d"></span></span> <br />
+        </div>
+        <div class="flex-container">
+            <div id="display-html-table"></div>
+            <div style="width:550px;" id="display-chart">
+                <canvas id="canvas-chart"></canvas>
+            </div>
+        </div>
+    </body>
+</html> 
