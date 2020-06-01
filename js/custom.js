@@ -165,39 +165,40 @@ function create_data_table(X, Y, YY) {
 
     -Rama
 */
+const getCircularReplacer = () => {
+    const seen = new WeakSet();
+    return (key, value) => {
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) {
+          return;
+        }
+        seen.add(value);
+      }
+      return value;
+    };
+};
 
-const verticalLinePlugin = {
-    getLinePosition: function (chart, pointIndex) {
-        const meta = chart.getDatasetMeta(0); // first dataset is used to discover X coordinate of a point
-        const data = meta.data;
-        return data[pointIndex]._model.x;
-    },
-    renderVerticalLine: function (chartInstance, pointIndex) {
-        const lineLeftOffset = this.getLinePosition(chartInstance, pointIndex);
-        const scale = chartInstance.scales['y-axis-0'];
-        const context = chartInstance.chart.ctx;
-  
-        // render vertical line
-        context.beginPath();
-        context.strokeStyle = '#ff0000';
-        context.moveTo(lineLeftOffset, scale.top);
-        context.lineTo(lineLeftOffset, scale.bottom);
-        context.stroke();
-  
-        // write label
-        context.fillStyle = "#ff0000";
-        context.textAlign = 'center';
-        context.fillText('MY TEXT', lineLeftOffset, (scale.bottom - scale.top) / 2 + scale.top);
-    },
-  
+const scatter_join_points_plugin = {
     afterDatasetsDraw: function (chart, easing) {
-        if (chart.config.lineAtIndex) {
-            chart.config.lineAtIndex.forEach(pointIndex => this.renderVerticalLine(chart, pointIndex));
+        if (chart.config.options.scatter_join_points) {
+            const set1 = chart.getDatasetMeta(0).data;
+            const set2 = chart.getDatasetMeta(1).data;
+            const ctx = chart.chart.ctx;
+
+            for (let i = 0; i < set1.length; ++i) {
+                ctx.beginPath();
+                ctx.strokeStyle = 'black';
+                ctx.moveTo(set1[i]._model.x, set1[i]._model.y);
+                ctx.lineTo(set2[i]._model.x, set2[i]._model.y);
+                ctx.stroke();
+            }
+
+            //chart.config.lineAtIndex.forEach(pointIndex => this.renderVerticalLine(chart, pointIndex));
         }
     }
 };
   
-Chart.plugins.register(verticalLinePlugin);
+Chart.plugins.register(scatter_join_points_plugin);
 
 function create_scatter_chart_data(data_table) {
     let dataset1 = data_table.map(x => ({x: x.x, y: x.y}));
@@ -249,6 +250,7 @@ function create_scatter_chart(data_table, canvas_id) {
                 display: true,
                 text: "Scatter Chart"
             },
+            scatter_join_points: true,
             annotation: {
                 annotations: [{
                     drawTime: "afterDatasetsDraw",

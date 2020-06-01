@@ -66,8 +66,10 @@
                 create_scatter_chart(data_table, "canvas-chart");
                 document.getElementById("r").innerText = r;
                 document.getElementById("d").innerText = sum(y, yy, (xi, yi) => xi - yi).toFixed(4);
-                console.log(window.chart_data);
-                console.log(window.scatter_chart);
+                //console.log(window.chart_data);
+                //console.log(window.scatter_chart);
+                console.log(window.scatter_chart.getDatasetMeta(0));
+                console.log(window.scatter_chart.getDatasetMeta(1));
                 MathJax.typeset();
             }
         </script>
@@ -85,6 +87,9 @@
             <div id="display-html-table"></div>
             <div style="width:550px;" id="display-chart">
                 <canvas id="canvas-chart"></canvas>
+            </div>
+            <div style="width:550px;" id=display-residual-plot">
+                <canvas id="canvas-residual-plot"></canvas>
             </div>
         </div>
     </body>
