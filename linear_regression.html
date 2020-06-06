@@ -61,12 +61,18 @@
 
                 let yy = linear_regression_apply(x, y);
                 let data_table = create_data_table(x, y, yy);
+                data_table.values = data_table.values.map(function(x) {
+                    x.ee = x.e **2;
+                    return x;
+                });
                 let html_table = create_html_table(data_table, "table-main", handle_html_table_change);
                 document.getElementById("display-html-table").appendChild(html_table);
                 create_scatter_chart(data_table, "canvas-chart");
                 create_residual_plot(data_table, "canvas-residual-plot");
                 document.getElementById("r").innerText = r;
                 document.getElementById("d").innerText = sum(y, yy, (xi, yi) => xi - yi).toFixed(4);
+                document.getElementById("ee").innerText = sum(data_table.values, (x) => x.ee);
+                document.getElementById("se").innerText = standard_error_slope(x, y, data_table.values.map(x => x.e));
            
                 MathJax.typeset();
             }
@@ -80,6 +86,8 @@
         <div id="display-text">
             <span>Correlation coefficient is <span id="r"></span></span> <br />
             <span>Sum of \(e = y - \hat{y}\) is <span id="d"></span></span> <br />
+            <span>Sum of \(e^2 = \) <span id="ee"></span></span> <br />
+            <span>SE = <span id="se"></span></span> <br />
         </div>
         <div class="flex-container">
             <div id="display-html-table"></div>

@@ -146,6 +146,12 @@ function linear_regression_apply(X, Y) {
     return X.map(x => b0 + b1 * x);
 }
 
+function standard_error_slope(X, E) {
+    check_cardinality(X, E);
+    let mx = mean(x);
+    return Math.sqrt(E.sum(e => e ** 2) / (E.length - 2)) / Math.sqrt(X.sum(x => (x - mx) ** 2));
+}
+
 /*
     Misc helper functions
 
@@ -155,7 +161,7 @@ function linear_regression_apply(X, Y) {
 function create_data_table(X, Y, YY) {
     let E = Y.map((y, i) => y - YY[i]);
     return {
-        headers: { "x" : "\\(x\\)", "y": "\\(y\\)", "yy": "\\(\\hat{y}\\)", "e": "\\(y - \\hat{y}\\)" },
+        headers: { "x" : "\\(x\\)", "y": "\\(y\\)", "yy": "\\(\\hat{y}\\)", "e": "\\(y - \\hat{y}\\)", "ee": "\\(e^2\\)" },
         values: X.map((x, i) => ({ "x":  x, "y": Y[i], "yy": YY[i], "e": E[i] }))
     }
 }
