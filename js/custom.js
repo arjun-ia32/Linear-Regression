@@ -160,10 +160,14 @@ function standard_error_slope(X, E) {
 
 function create_data_table(X, Y, YY) {
     let E = Y.map((y, i) => y - YY[i]);
-    return {
-        headers: { "x" : "\\(x\\)", "y": "\\(y\\)", "yy": "\\(\\hat{y}\\)", "e": "\\(y - \\hat{y}\\)", "ee": "\\(e^2\\)" },
-        values: X.map((x, i) => ({ "x":  x, "y": Y[i], "yy": YY[i], "e": E[i] }))
+    let EE = E.map(e => e ** 2);
+    let table = {
+        headers: { "x" : "\\(x\\)", "y": "\\(y\\)", "yy": "\\(\\hat{y}\\)", "e": "\\(e\\)", "ee": "\\(e^2\\)" },
+        values: X.map((x, i) => ({ "x":  x, "y": Y[i], "yy": YY[i], "e": E[i], "ee": EE[i] })),
+        //list: {X: X, Y: Y, E: E, EE: EE}
     }
+
+    return table;
 }
 
 /*
@@ -298,7 +302,7 @@ function create_residual_plot(data_table, canvas_id) {
     -Rama
 */
 
-function create_html_table(table_data, table_id, table_on_change_callback) {
+function create_html_table(table_data, settings) {
     let table = document.createElement("table");
     let thead = document.createElement("thead");
     let tr = document.createElement("tr");
@@ -306,8 +310,9 @@ function create_html_table(table_data, table_id, table_on_change_callback) {
     // Bootstrap classes
     table.classList.add("table-striped");
     table.classList.add("table-bordered");
-    table.id = table_id;
+    table.id = settings.table_id;
     table.internal_data = table_data;
+    table.internal_settings = settings;
 
     for (var i in table_data.values[0]) {
         if (table_data.values[0].hasOwnProperty(i)) {
@@ -321,13 +326,15 @@ function create_html_table(table_data, table_id, table_on_change_callback) {
         }
     }
 
-    // Add extra column for row insertion/removal control buttons
-    let th = document.createElement("th");
-    th.classList.add("px-1");
-    th.style.textAlign = "center";
-    th.style.verticalAlign = "center";
-    th.innerHTML = "+-";
-    tr.appendChild(th);
+    if (settings.enable_insert_remove_gui) {
+        // Add extra column for row insertion/removal control buttons
+        let th = document.createElement("th");
+        th.classList.add("px-1");
+        th.style.textAlign = "center";
+        th.style.verticalAlign = "center";
+        th.innerHTML = "+-";
+        tr.appendChild(th);
+    }
 
     thead.appendChild(tr);
     table.appendChild(thead);
@@ -338,27 +345,33 @@ function create_html_table(table_data, table_id, table_on_change_callback) {
         for (var j in table_data.values[0]) {
             if (table_data.values[0].hasOwnProperty(j)) {
                 let td = document.createElement("td");
+                let value = table_data.values[i][j];
                 td.style.textAlign = "center";
                 td.contentEditable = true;
-                td.innerText = table_data.values[i][j];
+                td.innerText = value;
+                if (!isNaN(value) && !Number.isInteger(value) && settings.round_threshold) {
+                    td.innerText = value.toFixed(settings.round_threshold);
+                }
                 td.internal_i = i;
                 td.internal_j = j;
-                td.addEventListener("input", table_on_change_callback(table, td));
+                td.addEventListener("input", settings.table_on_change_callback(table, td));
                 tr.appendChild(td);
             }
         }
 
-        // Add button for row insertion/removal control
-        let td = document.createElement("td");
-        td.style.textAlign = "center";
-        let pair = create_table_insert_remove_buttons();
+        if (settings.enable_insert_remove_gui) {
+            // Add button for row insertion/removal control
+            let td = document.createElement("td");
+            td.style.textAlign = "center";
+            let pair = create_table_insert_remove_buttons();
 
-        pair.insert.addEventListener("click", table_handle_insert_row(table, tr, table_on_change_callback));
-        pair.remove.addEventListener("click", table_handle_remove_row(table, tr, table_on_change_callback));
+            pair.insert.addEventListener("click", table_handle_insert_row(table, tr, settings.table_on_change_callback));
+            pair.remove.addEventListener("click", table_handle_remove_row(table, tr, settings.table_on_change_callback));
+            td.appendChild(pair.insert);
+            td.appendChild(pair.remove);
+            tr.appendChild(td);
+        }
 
-        td.appendChild(pair.insert);
-        td.appendChild(pair.remove);
-        tr.appendChild(td);
         tbody.appendChild(tr);
     }
 
@@ -423,27 +436,20 @@ function table_handle_insert_row(table, tr, table_on_change_callback) {
     };
 }
 
-function table_update_values(table) {
-    let X = table.internal_data.values.map(x => x.x);
-    let Y = table.internal_data.values.map(y => y.y);
-    let YY = linear_regression_apply(X, Y);
-    table.internal_data = create_data_table(X, Y, YY);
-
-    let r = ppmcc(X, Y);
-    document.getElementById("r").innerText = r.toFixed(4);
-    document.getElementById("d").innerText = table.internal_data.values.sum(x => x.e).toFixed(4);
+function update_table(table) {
+    if (table.internal_data.values.length <= 0)
+        return;
 
     for (let i = 1; i < table.rows.length; ++i) {
-        //console.log(i + " and YY is " + YY[i - 1]);
-        table.rows[i].cells.item(2).innerText = YY[i - 1].toFixed(4);
-        table.rows[i].cells.item(3).innerText = table.internal_data.values[i - 1].e.toFixed(4);
+        Object.keys(table.internal_data.values[i - 1]).forEach((key, idx) => {
+            let value = table.internal_data.values[i - 1][key];
+            table.rows[i].cells.item(idx).innerText = value;
+            //console.log("Updating " + key + " at idx " + idx + " with value " + value);
+            if (!isNaN(value) && !Number.isInteger(value) && table.internal_settings.round_threshold) {
+                table.rows[i].cells.item(idx).innerText = value.toFixed(table.internal_settings.round_threshold);
+            }
+        });
     }
-
-    window.chart_data.datasets[0].data = table.internal_data.values.map(x => ({x: x.x, y: x.y}));
-    window.chart_data.datasets[1].data = table.internal_data.values.map((x, i) => ({x: x.x, y: x.yy}));
-    window.residual_plot_data.datasets[0].data = table.internal_data.values.map((x, i) => ({x: x.x, y: x.e}));
-    window.scatter_chart.update();
-    window.residual_plot.update();
 }
 
 function table_handle_remove_row(table, tr) {
@@ -452,7 +458,8 @@ function table_handle_remove_row(table, tr) {
         //console.log("deleting " + tr.rowIndex - 1);
         //console.log(table.internal_data.values);
         table.deleteRow(tr.rowIndex);
-        table_update_values(table);
+        update_table(table);
+        update_charts(table);
     };
 }
 
