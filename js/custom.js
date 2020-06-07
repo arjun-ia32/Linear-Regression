@@ -148,7 +148,7 @@ function linear_regression_apply(X, Y) {
 
 function standard_error_slope(X, E) {
     check_cardinality(X, E);
-    let mx = mean(x);
+    let mx = mean(X);
     return Math.sqrt(E.sum(e => e ** 2) / (E.length - 2)) / Math.sqrt(X.sum(x => (x - mx) ** 2));
 }
 
