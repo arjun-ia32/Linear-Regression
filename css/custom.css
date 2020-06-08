@@ -1,0 +1,9 @@
+td:hover {
+    border: thin double blue;
+    border-radius: 25%;
+}
+
+td:focus {
+    border: 2px solid blue;
+    border-radius: 25%;
+}
