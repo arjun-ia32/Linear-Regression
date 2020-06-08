@@ -5,10 +5,12 @@
         <title>Linear Regression</title>
         <!-- Include Styles -->
         <link rel="stylesheet" href="../../Library/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="./css/custom.css" />
 
         <!-- Include Scripts -->
         <script src="../../Library/js/jquery.min.js"></script>
         <script src="../../Library/js/popper.min.js"></script>
+        <script src="../../Library/js/moment.min.js"></script>
         <script src="../../Library/js/bootstrap.bundle.min.js"></script>
         <script src="../../Library/js/chart.min.js"></script>
         <script src="../../Library/js/papaparse.min.js"></script>
@@ -25,10 +27,11 @@
         </style>
 
         <script>
+            "use strict";
             window.onload = process_on_load;
 
             function handle_html_table_change(table, td) {
-                return function() {
+                return function(event) {
                     //console.log("Change <" + td.innerText + ">");
                     if (td.innerText === "\n") {
                         return;
@@ -38,7 +41,7 @@
                     update_table(table);
                     update_display_info(table);
                     update_charts(table);
-                }
+                };
             }
 
             function update_calculated_fields(table) {
@@ -73,6 +76,25 @@
                 window.residual_plot.update();
             }
 
+            function test_large_tables() {
+                let intervals = create_interval_data_table(3600);
+                let data_table = {
+                    headers: { "interval": "Interval", "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun"},
+                    values: intervals
+                };
+                let html_table = create_html_table(data_table, {
+                    table_id: "table-intervals",
+                    enable_insert_remove_gui: false,
+                    round_threshold: 2,
+                    classes: {
+                        table: ["table-striped", "table-bordered"],
+                        th: ["px-1", "py-1"]
+                    },
+                });
+                //console.log(html_table);
+                document.getElementById("display-html-table").appendChild(html_table);
+            }
+
             function process_on_load() {
                 let x = [60, 70, 80, 85, 95];
                 let y = [70, 65, 70, 95, 85];
@@ -84,13 +106,18 @@
                     table_id: "table-main",
                     enable_insert_remove_gui: true,
                     round_threshold: 4,
-                    table_on_change_callback: handle_html_table_change
+                    classes: {
+                        table: ["table-striped", "table-bordered"],
+                        th: ["px-5", "py-1"]
+                    },
+                    table_on_change_callback: handle_html_table_change,
                 });
                 document.getElementById("display-html-table").appendChild(html_table);
 
                 create_scatter_chart(data_table, "canvas-chart");
                 create_residual_plot(data_table, "canvas-residual-plot");
                 update_display_info(html_table);
+                test_large_tables();
                 MathJax.typeset();
             }
         </script>

@@ -30,6 +30,31 @@ function sum(...args) {
     return s;
 }
 
+// Convert seconds to hh:mm string
+function seconds_to_string(secs) {
+    let hrs = Math.trunc(secs / 3600);
+    let mins = Math.trunc(secs / 60) - hrs * 60;
+    if (hrs < 10)
+        hrs = `0${hrs}`;
+    if (mins < 10)
+        mins = `0${mins}`;
+    return `${hrs}:${mins}`;
+}
+
+function create_interval_data_table(step) {
+    if (step % 900 != 0) {
+        throw "Step must in 15 minute intervals";
+    }
+
+    let intervals = [];
+    for (let i = 0; i < 86400; i += step) {
+        let blank_row = { interval: seconds_to_string(i), mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 };
+        intervals.push(blank_row);
+    }
+
+    return intervals;
+}
+
 // Arithmatic mean
 function mean(X) {
     return X.sum() / X.length;
@@ -302,6 +327,38 @@ function create_residual_plot(data_table, canvas_id) {
     -Rama
 */
 
+function html_table_on_paste_default_handler(table, td) {
+    return function(event) {
+        let data = (event.clipboardData || window.clipboardData).getData("text");
+        data = data.slice(0, -1);
+        let row_data = data.split("\n");
+        let row_start;
+        let new_td = td;
+
+        if (row_data.length <= 0)
+            return;
+
+        console.log(row_data);
+        let max_rows = Math.min(table.rows.length - new_td.parentElement.rowIndex, row_data.length);
+        for (let i = 0; i < max_rows; ++i) {
+            let column_data = row_data[i].split("\t");
+            let columns = new_td.parentElement.cells.length;
+            let paste_columns = column_data.length;
+            let max_columns = Math.min(columns - new_td.cellIndex, paste_columns);
+
+            for (let j = 0; j < max_columns; ++j) {
+                new_td.parentElement.cells[j + new_td.cellIndex].innerText = column_data[j];
+            }
+
+            if (new_td.parentElement.rowIndex < table.rows.length - 1)
+                new_td = table.rows[new_td.parentElement.rowIndex + 1].cells[new_td.cellIndex];
+        }
+
+        console.log(table.rows.length);
+        event.preventDefault();
+    };
+}
+
 function create_html_table(table_data, settings) {
     let table = document.createElement("table");
     let thead = document.createElement("thead");
@@ -310,6 +367,11 @@ function create_html_table(table_data, settings) {
     // Bootstrap classes
     table.classList.add("table-striped");
     table.classList.add("table-bordered");
+    if (settings.classes && settings.classes.table) {
+        settings.classes.table.forEach((i) => {
+            table.classList.add(i);
+        });
+    }
     table.id = settings.table_id;
     table.internal_data = table_data;
     table.internal_settings = settings;
@@ -317,8 +379,11 @@ function create_html_table(table_data, settings) {
     for (var i in table_data.values[0]) {
         if (table_data.values[0].hasOwnProperty(i)) {
             let th = document.createElement("th");
-            th.classList.add("px-5");
-            th.classList.add("py-1");
+            if (settings.classes && settings.classes.th) {
+                settings.classes.th.forEach((i) => {
+                    th.classList.add(i);
+                });
+            }
             th.style.textAlign = "center";
             th.style.verticalAlign = "center";
             th.innerHTML = table_data.headers[i];
@@ -354,7 +419,12 @@ function create_html_table(table_data, settings) {
                 }
                 td.internal_i = i;
                 td.internal_j = j;
-                td.addEventListener("input", settings.table_on_change_callback(table, td));
+                if (settings.table_on_change_callback)
+                    td.addEventListener("input", settings.table_on_change_callback(table, td));
+                if (settings.table_on_paste_callback)
+                    td.addEventListener("paste", settings.table_on_paste_callback(table, td));
+                else
+                    td.addEventListener("paste", html_table_on_paste_default_handler(table, td));
                 tr.appendChild(td);
             }
         }
