@@ -15,7 +15,9 @@
         <script src="../../Library/js/chart.min.js"></script>
         <script src="../../Library/js/papaparse.min.js"></script>
         <script src="../../Library/js/MathJax/es5/tex-chtml.js" id="MathJax-script" async></script>
+        <script src="../../Library/js/table.js"></script>
         <script src="./js/custom.js"></script>
+        <script src="./js/stat_functions.js"></script>
 
         <style>
             .flex-container {
@@ -32,13 +34,13 @@
 
             function handle_html_table_change(table, td) {
                 return function(event) {
-                    //console.log("Change <" + td.innerText + ">");
+                    console.log("Change <" + td.innerText + ">");
                     if (td.innerText === "\n") {
                         return;
                     }
                     table.internal_data.values[td.parentElement.rowIndex - 1][td.internal_j] = parseFloat(td.innerText);
                     update_calculated_fields(table);
-                    update_table(table);
+                    html_table_update(table);
                     update_display_info(table);
                     update_charts(table);
                 };
@@ -76,23 +78,25 @@
                 window.residual_plot.update();
             }
 
-            function test_large_tables() {
-                let intervals = create_interval_data_table(3600);
+            function nd_test(X) {
+                X.sort();
+                let Y = normal_distribution(X);
                 let data_table = {
-                    headers: { "interval": "Interval", "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun"},
-                    values: intervals
+                    headers: {"x": "x", "y": "y"},
+                    values: Y.map((y, i) => ({ "x": X[i], "y": y }))
                 };
-                let html_table = create_html_table(data_table, {
-                    table_id: "table-intervals",
+                let html_table = html_table_create(data_table, {
+                    table_id: "table-normal-distribution",
                     enable_insert_remove_gui: false,
-                    round_threshold: 2,
+                    round_threshold: 4,
                     classes: {
                         table: ["table-striped", "table-bordered"],
-                        th: ["px-1", "py-1"]
+                        th: ["px-5", "py-1"]
                     },
-                });
-                //console.log(html_table);
-                document.getElementById("display-html-table").appendChild(html_table);
+               });
+               document.getElementById("display-html-table").appendChild(html_table);
+               create_normal_distribution_chart(data_table, "canvas-normal-distribution");
+
             }
 
             function process_on_load() {
@@ -102,7 +106,7 @@
                 let yy = linear_regression_apply(x, y);
                 let data_table = create_data_table(x, y, yy);
 
-                let html_table = create_html_table(data_table, {
+                let html_table = html_table_create(data_table, {
                     table_id: "table-main",
                     enable_insert_remove_gui: true,
                     round_threshold: 4,
@@ -111,13 +115,14 @@
                         th: ["px-5", "py-1"]
                     },
                     table_on_change_callback: handle_html_table_change,
+                    table_on_remove_row: update_charts,
                 });
                 document.getElementById("display-html-table").appendChild(html_table);
+                //nd_test(x);
 
                 create_scatter_chart(data_table, "canvas-chart");
                 create_residual_plot(data_table, "canvas-residual-plot");
                 update_display_info(html_table);
-                test_large_tables();
                 MathJax.typeset();
             }
         </script>
@@ -144,6 +149,12 @@
                 <div style="width:350px;" id="display-residual-plot">
                     <canvas height="200" id="canvas-residual-plot"></canvas>
                 </div>
+
+                <!--
+                <div style="width:350px;" id="display-normal-distribution">
+                    <canvas height="200" id="canvas-normal-distribution"></canvas>
+                </div>
+            -->
             </div>
         </main>
         <footer class="text-muted bg-light">
