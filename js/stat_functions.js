@@ -114,7 +114,7 @@ function correlation_coeff_p(X, Y) {
 
 // Correlation coefficient of sample
 function correlation_coeff_s(X, Y) {
-    return covariance_s(X, Y) / (stddev_p(X) * stddev_p(Y));
+    return covariance_s(X, Y) / (stddev_s(X) * stddev_s(Y));
 }
 
 // Coefficient of determination of population
