@@ -162,7 +162,6 @@ function create_residual_plot(data_table, canvas_id) {
     });
 }
 
-
 function create_normal_distribution_chart(data_table, canvas_id) {
     window.normal_distribution_data = create_normal_distribution_data(data_table.values);
 

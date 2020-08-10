@@ -5,6 +5,9 @@ Array.prototype.sum = function(op_func) {
     return this.reduce((acc, x) => acc + op_func(x), 0);
 }
 
+Array.prototype.mean = function(op_func) {    
+    return this.sum(op_func) / this.length;
+}
 /*
     For summing up multiple arrays. Callback
     function must be the last argument passed,
@@ -106,13 +109,11 @@ function covariance_s(X, Y) {
 
 // Correlation coefficient of population
 function correlation_coeff_p(X, Y) {
-    check_cardinality(X, Y);
     return covariance_p(X, Y) / (stddev_p(X) * stddev_p(Y));
 }
 
 // Correlation coefficient of sample
 function correlation_coeff_s(X, Y) {
-    check_cardinality(X, Y);
     return covariance_s(X, Y) / (stddev_p(X) * stddev_p(Y));
 }
 

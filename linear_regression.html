@@ -15,7 +15,7 @@
         <script src="../../Library/js/chart.min.js"></script>
         <script src="../../Library/js/papaparse.min.js"></script>
         <script src="../../Library/js/MathJax/es5/tex-chtml.js" id="MathJax-script" async></script>
-        <script src="../../Library/js/table.js"></script>
+        <script src="../HTML-Table/js/table.js"></script>
         <script src="./js/custom.js"></script>
         <script src="./js/stat_functions.js"></script>
 
@@ -63,11 +63,14 @@
                 let Y = table.internal_data.values.map(y => y.y);
                 let E = table.internal_data.values.map(e => e.e);
                 let EE = table.internal_data.values.map(e => e.ee);
+                let r = ppmcc(X, Y);
 
-                document.getElementById("r").innerText = ppmcc(X, Y).toFixed(table.internal_settings.round_threshold);
+                nd_test(X);
+                document.getElementById("r").innerText = r.toFixed(table.internal_settings.round_threshold);
                 document.getElementById("e").innerText = E.sum().toFixed(table.internal_settings.round_threshold);
                 document.getElementById("ee").innerText = EE.sum().toFixed(table.internal_settings.round_threshold);
                 document.getElementById("se").innerText = standard_error_slope(X, Y, E).toFixed(table.internal_settings.round_threshold);
+                document.getElementById("R2").innerText = (r ** 2).toFixed(table.internal_settings.round_threshold);
             }
 
             function update_charts(table) {
@@ -93,10 +96,21 @@
                         table: ["table-striped", "table-bordered"],
                         th: ["px-5", "py-1"]
                     },
-               });
-               document.getElementById("display-html-table").appendChild(html_table);
-               create_normal_distribution_chart(data_table, "canvas-normal-distribution");
-
+                });
+                let container = document.getElementById("display-normal-distribution-table");
+                // Empty container
+                while (container.firstChild) {
+                    container.removeChild(container.lastChild);
+                }
+                container.parentElement.style.display = "flex";
+                container.appendChild(html_table);
+                if (window.normal_distribution_data) {
+                    window.normal_distribution_data.labels = X;
+                    window.normal_distribution_data.datasets[0].data = Y;
+                    window.normal_distribution_chart.update();
+                } else {
+                    create_normal_distribution_chart(data_table, "canvas-normal-distribution");
+                }
             }
 
             function process_on_load() {
@@ -118,7 +132,7 @@
                     table_on_remove_row: update_charts,
                 });
                 document.getElementById("display-html-table").appendChild(html_table);
-                //nd_test(x);
+                nd_test(x);
 
                 create_scatter_chart(data_table, "canvas-chart");
                 create_residual_plot(data_table, "canvas-residual-plot");
@@ -136,7 +150,8 @@
         <br />
         <main class="mx-4" role="main">
             <div id="display-text">
-                <span>Correlation coefficient \(r\) is <span id="r"></span></span> <br />
+                <span>Correlation coefficient \(R =\) <span id="r"></span></span> <br />
+                <span>Coefficient of determination \(R^2 =\) <span id="R2"></span></span> <br />
                 <span>\(\displaystyle\sum_{i=0}^{n-1}e_i =\) <span id="e"></span> where \(e = y - \hat{y}\)</span><br />
                 <span>\(\displaystyle\sum_{i=0}^{n-1}{e_i}^2 =\) <span id="ee"></span></span> <br />
                 <span>Standard error = <span id="se"></span></span> <br />
@@ -149,12 +164,12 @@
                 <div style="width:350px;" id="display-residual-plot">
                     <canvas height="200" id="canvas-residual-plot"></canvas>
                 </div>
-
-                <!--
+            </div>
+            <div class="flex-container" style="display:none;">
+                <div id="display-normal-distribution-table"></div>
                 <div style="width:350px;" id="display-normal-distribution">
                     <canvas height="200" id="canvas-normal-distribution"></canvas>
                 </div>
-            -->
             </div>
         </main>
         <footer class="text-muted bg-light">
