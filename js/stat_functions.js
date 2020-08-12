@@ -151,6 +151,59 @@ function ppmcc(X, Y) {
 
     -Rama
 */
+
+class LinearRegression {
+    constructor(X, Y, transform_y, detransform_y, transform_x) {
+        this.orig_x = X;
+        this.orig_y = Y;
+
+        this.x = X;
+        this.y = Y;
+        this.detransform_y = detransform_y;
+        if (transform_y) {
+            this.y.map(y => transform_y(y));
+        }
+
+        if (transform_x) {
+            this.x.map(x => transform_x(x));
+        }
+    }
+
+    calculate_slope() {
+        this.mean_x = mean(this.x);
+        this.mean_y = mean(this.y);
+        this.slope = sum(this.x, this.y, (x, y) => (x - this.mean_x) * (y - this.mean_y)) / this.x.sum(x => (x - this.mean_x) ** 2);    
+    }
+
+    calculate_y_intercept() {
+        if (!this.slope)
+            this.calculate_slope();
+        this.y_intercept = mean(this.y) - this.slope * mean(this.x);
+    }
+
+    calculate_error() {
+        this.r = ppmcc(this.x, this.y);
+        this.r2 = this.r * this.r;
+        this.e = this.y.map((y, i) => y - this.y_hat[i]);
+        this.ee = this.e.map(e => e * e);
+    }
+
+    calculate() {
+        this.calculate_slope();
+        this.calculate_y_intercept();
+        this.y_hat = this.apply_regression(this.x);
+        this.calculate_error();
+    }
+
+    predict_single(new_x) {
+        return this.y_intercept + this.slope * new_x;
+    }
+
+    apply_regression(list_x) {
+        return list_x.map(x => this.y_intercept + this.slope * x);
+    }
+}
+
 function linear_regression_b1(X, Y) {
     check_cardinality(X, Y);
     let meanx = mean(X), meany = mean(Y);

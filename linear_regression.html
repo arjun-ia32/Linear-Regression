@@ -39,6 +39,8 @@
                         return;
                     }
                     table.internal_data.values[td.parentElement.rowIndex - 1][td.internal_j] = parseFloat(td.innerText);
+                    table.internal_data.lr.x = table.internal_data.values.map(x => x.x);
+                    table.internal_data.lr.y = table.internal_data.values.map(y => y.y);
                     update_calculated_fields(table);
                     html_table_update(table);
                     update_display_info(table);
@@ -47,30 +49,29 @@
             }
 
             function update_calculated_fields(table) {
-                let X = table.internal_data.values.map(x => x.x);
-                let Y = table.internal_data.values.map(y => y.y);
-                let YY = linear_regression_apply(X, Y);
+                let lr = table.internal_data.lr;
+                lr.calculate();
 
                 for (let i = 0; i < table.internal_data.values.length; ++i) {
-                    table.internal_data.values[i].yy = YY[i];
-                    table.internal_data.values[i].e = Y[i] - YY[i];
-                    table.internal_data.values[i].ee = table.internal_data.values[i].e ** 2;
+                    table.internal_data.values[i]["yy"] = lr.y_hat[i];
+                    table.internal_data.values[i]["e"] = lr.e[i];
+                    table.internal_data.values[i]["ee"] = lr.ee[i];
+                    table.internal_data.values[i]["x-mx"] = lr.x[i] - lr.mean_x;
+                    table.internal_data.values[i]["x-mx2"] = table.internal_data.values[i]["x-mx"] ** 2;
+                    table.internal_data.values[i]["y-my"] = lr.y[i] - lr.mean_y;
+                    table.internal_data.values[i]["xy"] = table.internal_data.values[i]["x-mx"] * table.internal_data.values[i]["y-my"];
                 }
             }
 
             function update_display_info(table) {
-                let X = table.internal_data.values.map(x => x.x);
-                let Y = table.internal_data.values.map(y => y.y);
-                let E = table.internal_data.values.map(e => e.e);
-                let EE = table.internal_data.values.map(e => e.ee);
-                let r = ppmcc(X, Y);
+                let lr = table.internal_data.lr;
 
-                nd_test(X);
-                document.getElementById("r").innerText = r.toFixed(table.internal_settings.round_threshold);
-                document.getElementById("e").innerText = E.sum().toFixed(table.internal_settings.round_threshold);
-                document.getElementById("ee").innerText = EE.sum().toFixed(table.internal_settings.round_threshold);
-                document.getElementById("se").innerText = standard_error_slope(X, Y, E).toFixed(table.internal_settings.round_threshold);
-                document.getElementById("R2").innerText = (r ** 2).toFixed(table.internal_settings.round_threshold);
+                nd_test(lr.x);
+                document.getElementById("r").innerText = lr.r.toFixed(table.internal_settings.round_threshold);
+                document.getElementById("e").innerText = lr.e.sum().toFixed(table.internal_settings.round_threshold);
+                document.getElementById("ee").innerText = lr.ee.sum().toFixed(table.internal_settings.round_threshold);
+                document.getElementById("se").innerText = standard_error_slope(lr.x, lr.y, lr.e).toFixed(table.internal_settings.round_threshold);
+                document.getElementById("R2").innerText = lr.r2.toFixed(table.internal_settings.round_threshold);
             }
 
             function update_charts(table) {
@@ -94,7 +95,7 @@
                     round_threshold: 4,
                     classes: {
                         table: ["table-striped", "table-bordered"],
-                        th: ["px-5", "py-1"]
+                        th: ["px-3", "py-1"]
                     },
                 });
                 let container = document.getElementById("display-normal-distribution-table");
@@ -116,9 +117,11 @@
             function process_on_load() {
                 let x = [60, 70, 80, 85, 95];
                 let y = [70, 65, 70, 95, 85];
+                let lr = new LinearRegression(x, y);
 
-                let yy = linear_regression_apply(x, y);
-                let data_table = create_data_table(x, y, yy);
+                lr.calculate();
+                let data_table = create_data_table(lr);
+                data_table.lr = lr;
 
                 let html_table = html_table_create(data_table, {
                     table_id: "table-main",
@@ -126,7 +129,7 @@
                     round_threshold: 4,
                     classes: {
                         table: ["table-striped", "table-bordered"],
-                        th: ["px-5", "py-1"]
+                        th: ["px-3", "py-1"]
                     },
                     table_on_change_callback: handle_html_table_change,
                     table_on_remove_row: update_charts,

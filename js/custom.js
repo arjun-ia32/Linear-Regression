@@ -6,13 +6,9 @@
     -Rama
 */
 
-function create_data_table(X, Y, YY) {
-    let E = Y.map((y, i) => y - YY[i]);
-    let EE = E.map(e => e ** 2);
-	let mx = mean(X);
-	let my = mean(Y);
-	let XMX = X.map(x => x - mx);
-	let YMY = Y.map(y => y - my);
+function create_data_table(lr) {
+	let XMX = lr.x.map(x => x - lr.mean_x);
+	let YMY = lr.y.map(y => y - lr.mean_y);
 	let XY = XMX.map((x, i) => x * YMY[i]);
 	let XMX2 = XMX.map(x => x ** 2);
     let table = {
@@ -26,15 +22,15 @@ function create_data_table(X, Y, YY) {
 					"e": "\\(e\\)",
 					"ee": "\\(e^2\\)"
 				},
-        values: X.map((x, i) => ({ 	"x":  x,
-									"y": Y[i],
+        values: lr.x.map((x, i) => ({ 	"x":  x,
+									"y": lr.y[i],
 									"x-mx": XMX[i],
 									"y-my": YMY[i],
 									"xy": XY[i],
 									"x-mx2": XMX2[i],
-									"yy": YY[i],
-									"e": E[i],
-									"ee": EE[i]
+									"yy": lr.y_hat[i],
+									"e": lr.e[i],
+									"ee": lr.ee[i]
 								})),
         //list: {X: X, Y: Y, E: E, EE: EE}
     }
